@@ -70,12 +70,12 @@ Every command also accepts `"current_buffer_only": true` to restrict the jump to
 
 `Preferences → Package Settings → minijump → Settings – User`:
 
-| Setting                                   | Default               | Description                                                                                                                        |
-| ----------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `labels`                                  | `a-z A-Z`             | Label characters, in order. Unique chars; string or array.                                                                         |
-| `search_case_sensitivity`                 | `true`                | Case-sensitive search in word mode.                                                                                                |
-| `label_foreground` / `label_background`   | `#f7f7f7` / `#ec5f67` | Label colors (any CSS color). Empty background = scheme accent; empty foreground = contrasting color.                              |
-| `target_foreground` / `target_background` | `#f7f7f7` / `#ec5f67` | Target-character highlight colors. Empty background disables the highlight.                                                        |
+| Setting                                   | Default                                                | Description                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `labels`                                  | `sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ` | Label characters, in order. Unique chars; string or array.                                            |
+| `search_case_sensitivity`                 | `false`                                                | Case-sensitive search in word mode.                                                                   |
+| `label_foreground` / `label_background`   | `#f7f7f7` / `#ec5f67`                                  | Label colors (any CSS color). Empty background = scheme accent; empty foreground = contrasting color. |
+| `target_foreground` / `target_background` | `#f7f7f7` / `#ec5f67`                                  | Target-character highlight colors. Empty background disables the highlight.                           |
 
 All colors are set explicitly; nothing is derived from scopes.
 
