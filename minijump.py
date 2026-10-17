@@ -150,12 +150,12 @@ def _scheme_dir():
 
 
 def _scheme_content():
-    """Override file content for the current settings, or None when the
-    target highlight is disabled."""
+    """Override file content for the current settings; an override with no
+    rules when the target highlight is disabled."""
     settings = sublime.load_settings(SETTINGS_FILE)
     background = _color(settings, "target_background")
     if not background:
-        return None
+        return json.dumps({"rules": []}) + "\n"
     rule = {
         "name": "minijump target",
         "scope": TARGET_SCOPE,
@@ -193,42 +193,38 @@ def _sync_schemes(views=()):
     """Make sure every scheme in use has an up-to-date override.
 
     Disk is only touched when something changed, so this is cheap to call
-    on every settings change and every render. Overrides for schemes that
-    are no longer in use are kept (they are harmless and spare a rewrite
-    when the scheme comes back); all are removed when the highlight
-    is disabled.
+    on every settings change and every render. Overrides are never
+    deleted: Sublime fails to reload the active scheme when one of its
+    override files disappears, so overrides for schemes no longer in use
+    are kept, and disabling the highlight empties them instead.
     """
     files = _scan_scheme_dir()
     content = _scheme_content()
     directory = _scheme_dir()
 
-    if content is None:
-        for name in list(files):
-            try:
-                os.remove(os.path.join(directory, name))
-            except OSError:
-                pass
-            del files[name]
-        return
-
     names = set(files)
-    _scheme_names(_preferences(), names)
-    if views:
-        for view in views:
-            if view.is_valid():
-                _scheme_names(view.settings(), names)
-    else:
-        for window in sublime.windows():
-            for view in window.views():
-                _scheme_names(view.settings(), names)
+    if _color(sublime.load_settings(SETTINGS_FILE), "target_background"):
+        _scheme_names(_preferences(), names)
+        if views:
+            for view in views:
+                if view.is_valid():
+                    _scheme_names(view.settings(), names)
+        else:
+            for window in sublime.windows():
+                for view in window.views():
+                    _scheme_names(view.settings(), names)
 
     for name in names:
         if files.get(name) == content:
             continue
+        path = os.path.join(directory, name)
+        tmp = path + ".tmp"
         try:
             os.makedirs(directory, exist_ok=True)
-            with open(os.path.join(directory, name), "w", encoding="utf-8") as f:
+            # Write-then-rename so Sublime never reads a partial file.
+            with open(tmp, "w", encoding="utf-8") as f:
                 f.write(content)
+            os.replace(tmp, path)
         except OSError as e:
             print(f"minijump: could not write color scheme override {name}: {e}")
             continue

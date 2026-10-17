@@ -24,7 +24,7 @@
   // override (one rule for the private "minijump.target" scope) per
   // color scheme in use to Packages/User/minijump/. It is only rewritten
   // when these colors or your color scheme change.
-  // Empty background = no highlight (and the overrides are removed).
+  // Empty background = no highlight (the overrides are emptied, not deleted).
   "target_foreground": "#f7f7f7",
   "target_background": "#ec5f67",
 
