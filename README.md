@@ -73,33 +73,15 @@ Every command also accepts `"current_buffer_only": true` to restrict the jump to
 | Setting                                 | Default    | Description                                                                                                                        |
 | --------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `labels`                                | `a-z A-Z`  | Label characters, in order. Unique chars; string or array.                                                                         |
-| `labels_scope`                          | `invalid`  | Scope used for label colors + target highlight. `""` disables the highlight.                                                       |
 | `search_case_sensitivity`               | `true`     | Case-sensitive search in word mode.                                                                                                |
-| `label_foreground` / `label_background` | `""`       | Explicit label colors (CSS); empty = derive from `labels_scope`/scheme.                                                            |
+| `label_foreground` / `label_background` | `#f7f7f7` / `#ec5f67` | Label colors (any CSS color). Empty background = scheme accent; empty foreground = contrasting color.                 |
+| `target_foreground` / `target_background` | `#f7f7f7` / `#ec5f67` | Target-character highlight colors. Empty background disables the highlight.                                         |
 | `label_font_face` / `label_font_size`   | `""` / `0` | Label font; empty/0 = match the view's font.                                                                                       |
 | `label_bold`                            | `true`     | Bold labels.                                                                                                                       |
 | `label_padding`                         | `1`        | Horizontal padding (px) around each label.                                                                                         |
 | `label_border_radius`                   | `2`        | Corner radius (px) of each label.                                                                                                  |
 | `label_offset_em`                       | `0.6`      | Pull-back of the label over the target char, in em. Most monospace fonts are ~0.6em per character; use `0.5` for e.g. Ubuntu Mono. |
 
-Colors come from the selected color scheme: if it styles `labels_scope`, those colors are used (alpha included); otherwise the scheme's accent color is used with a contrasting foreground, so labels stay readable in any theme.
+All colors are set explicitly; nothing is derived from scopes.
 
-- Possible scopes:
-  - Region scopes:
-    - `region.redish`
-    - `region.orangish`
-    - `region.yellowish`
-    - `region.greenish`
-    - `region.cyanish`
-    - `region.bluish`
-    - `region.purplish`
-    - `region.pinkish`
-  - Syntax scopes:
-    - `invalid.deprecated`
-    - `keyword`
-    - `string`
-    - `comment`
-    - `constant.numeric`
-    - `entity.name.function`
-    - `markup.inserted`
-    - `markup.deleted`
+Sublime can only color highlights (`add_regions`) through the color scheme, so for the target highlight minijump writes a tiny color-scheme override per scheme in use to `Packages/User/minijump/<Scheme>.sublime-color-scheme`. It adds a single rule for the private `minijump.target` scope and is merged with your scheme by Sublime (your own overrides are untouched). The files are only rewritten when the target colors or your color scheme change; setting `target_background` to `""` removes them. They are left in place if you uninstall minijump. Delete `Packages/User/minijump/` to remove them.

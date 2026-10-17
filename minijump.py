@@ -30,6 +30,8 @@ while searching is kept tight:
     lifetime of the session.
 """
 
+import json
+import os
 import re
 
 import sublime
@@ -41,6 +43,19 @@ if int(sublime.version()) < 4000:
 SETTINGS_FILE = "minijump.sublime-settings"
 PHANTOM_KEY = "minijump_labels"
 REGION_KEY = "minijump_targets"
+ON_CHANGE_KEY = "minijump"
+
+# Regions can only be colored through a scope, so the target highlight uses
+# a private scope that minijump styles itself via generated color-scheme
+# overrides in Packages/User/<SCHEME_DIR>/ (merged by filename with the
+# active scheme). They only add a rule for TARGET_SCOPE.
+TARGET_SCOPE = "minijump.target"
+SCHEME_DIR = "minijump"
+DEFAULT_SCHEMES = {
+    "color_scheme": "Mariana.sublime-color-scheme",
+    "light_color_scheme": "Breakers.sublime-color-scheme",
+    "dark_color_scheme": "Mariana.sublime-color-scheme",
+}
 
 DEFAULT_LABELS = "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -57,6 +72,7 @@ _select = False  # select mode armed for the next jump
 
 _prefs = None
 _regex_cache = {}
+_scheme_files = None  # override filename -> content on disk, once scanned
 
 
 def _preferences():
@@ -89,6 +105,136 @@ def _to_int(value, default):
         return default
 
 
+# ------------------------------------------------------ scheme overrides
+
+
+def _color(settings, key):
+    return str(settings.get(key) or "").strip()
+
+
+def _override_name(scheme):
+    """Filename of the override for a `color_scheme` value, or None.
+
+    Overrides are matched by filename: `.tmTheme` schemes are overridden
+    by a `.sublime-color-scheme`, hidden schemes by a `.hidden-color-scheme`.
+    """
+    if not scheme or not isinstance(scheme, str):
+        return None
+    base = scheme.replace("\\", "/").rsplit("/", 1)[-1]
+    stem, dot, ext = base.rpartition(".")
+    if not dot:
+        stem, ext = base, ""
+    if not stem:
+        return None
+    if ext.startswith("hidden"):
+        return stem + ".hidden-color-scheme"
+    return stem + ".sublime-color-scheme"
+
+
+def _scheme_names(settings, out):
+    """Add the override filenames for the scheme(s) `settings` selects."""
+    scheme = settings.get("color_scheme") or DEFAULT_SCHEMES["color_scheme"]
+    if scheme == "auto":
+        keys = ("light_color_scheme", "dark_color_scheme")
+        schemes = [settings.get(key) or DEFAULT_SCHEMES[key] for key in keys]
+    else:
+        schemes = [scheme]
+    for scheme in schemes:
+        name = _override_name(scheme)
+        if name:
+            out.add(name)
+
+
+def _scheme_dir():
+    return os.path.join(sublime.packages_path(), "User", SCHEME_DIR)
+
+
+def _scheme_content():
+    """Override file content for the current settings, or None when the
+    target highlight is disabled."""
+    settings = sublime.load_settings(SETTINGS_FILE)
+    background = _color(settings, "target_background")
+    if not background:
+        return None
+    rule = {
+        "name": "minijump target",
+        "scope": TARGET_SCOPE,
+        "background": background,
+    }
+    foreground = _color(settings, "target_foreground")
+    if foreground:
+        rule["foreground"] = foreground
+    return json.dumps({"rules": [rule]}, indent=2) + "\n"
+
+
+def _scan_scheme_dir():
+    """Load the overrides already on disk (once per plugin load)."""
+    global _scheme_files
+    if _scheme_files is not None:
+        return _scheme_files
+    _scheme_files = {}
+    directory = _scheme_dir()
+    try:
+        names = os.listdir(directory)
+    except OSError:
+        return _scheme_files
+    for name in names:
+        if not name.endswith("-color-scheme"):
+            continue
+        try:
+            with open(os.path.join(directory, name), encoding="utf-8") as f:
+                _scheme_files[name] = f.read()
+        except OSError:
+            _scheme_files[name] = None
+    return _scheme_files
+
+
+def _sync_schemes(views=()):
+    """Make sure every scheme in use has an up-to-date override.
+
+    Disk is only touched when something changed, so this is cheap to call
+    on every settings change and every render. Overrides for schemes that
+    are no longer in use are kept (they are harmless and spare a rewrite
+    when the scheme comes back); all are removed when the highlight
+    is disabled.
+    """
+    files = _scan_scheme_dir()
+    content = _scheme_content()
+    directory = _scheme_dir()
+
+    if content is None:
+        for name in list(files):
+            try:
+                os.remove(os.path.join(directory, name))
+            except OSError:
+                pass
+            del files[name]
+        return
+
+    names = set(files)
+    _scheme_names(_preferences(), names)
+    if views:
+        for view in views:
+            if view.is_valid():
+                _scheme_names(view.settings(), names)
+    else:
+        for window in sublime.windows():
+            for view in window.views():
+                _scheme_names(view.settings(), names)
+
+    for name in names:
+        if files.get(name) == content:
+            continue
+        try:
+            os.makedirs(directory, exist_ok=True)
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            print(f"minijump: could not write color scheme override {name}: {e}")
+            continue
+        files[name] = content
+
+
 def _cleanup():
     """Tear down the active session: remove overlays, disarm select mode."""
     global _session, _select
@@ -108,7 +254,7 @@ def _cleanup():
     session.label_map = {}
 
 
-class _Session(object):
+class _Session(object):  # noqa: UP004
     """All state for one active jump. Only one session exists at a time."""
 
     __slots__ = (
@@ -123,6 +269,7 @@ class _Session(object):
         "font_face",
         "font_size",
         "head_char",
+        "highlight",
         "kind",
         "label_bg",
         "label_fg",
@@ -134,7 +281,6 @@ class _Session(object):
         "phantom_sets",
         "radius",
         "rendered",
-        "scope",
         "window",
     )
 
@@ -154,7 +300,7 @@ class _Session(object):
 
         self.case_sensitive = bool(settings.get("search_case_sensitivity", True))
 
-        self.scope = settings.get("labels_scope", "invalid") or ""
+        self.highlight = bool(_color(settings, "target_background"))
         self.bold = bool(settings.get("label_bold", True))
         self.padding = max(0, _to_int(settings.get("label_padding") or 0, 0))
         self.radius = max(0, _to_int(settings.get("label_border_radius") or 0, 0))
@@ -164,8 +310,8 @@ class _Session(object):
             self.offset = 0.6
         self.font_face = settings.get("label_font_face") or ""
         self.font_size = settings.get("label_font_size") or 0
-        self.label_fg = settings.get("label_foreground") or ""
-        self.label_bg = settings.get("label_background") or ""
+        self.label_fg = _color(settings, "label_foreground")
+        self.label_bg = _color(settings, "label_background")
 
         self.head_char = ""
         self.awaiting_label = False
@@ -188,7 +334,7 @@ class _Session(object):
         return f'<span style="{style}">{_escape_html(label)}</span>'
 
     def _label_style(self, view):
-        bg, fg = self._label_colors(view)
+        bg, fg = self._label_colors()
         parts = [
             f"background-color:{bg}",
             f"color:{fg}",
@@ -222,32 +368,11 @@ class _Session(object):
         parts.append("white-space:nowrap")
         return ";".join(parts)
 
-    def _label_colors(self, view):
-        """Resolve label colors: explicit settings > labels_scope styling in
-        the color scheme > the scheme's accent color."""
-        fg = self.label_fg
-        bg = self.label_bg
-        if fg and bg:
-            return bg, fg
-        scoped = {}
-        if self.scope:
-            try:
-                scoped = view.style_for_scope(self.scope) or {}
-            except Exception:
-                scoped = {}
-        default = {}
-        try:
-            default = view.style() or {}
-        except Exception:
-            pass
-        if not bg:
-            bg = scoped.get("background") or ""
-            if not bg or bg == default.get("background"):
-                bg = "var(--accent)"
-        if not fg:
-            fg = scoped.get("foreground") or ""
-            if not fg or fg == default.get("foreground"):
-                fg = "color(var(--foreground) min-contrast(var(--accent) 4.5))"
+    def _label_colors(self):
+        """Resolve label colors: explicit settings, else the scheme's accent
+        color with a foreground contrasting against the background."""
+        bg = self.label_bg or "var(--accent)"
+        fg = self.label_fg or f"color(var(--foreground) min-contrast({bg} 4.5))"
         return bg, fg
 
 
@@ -365,6 +490,10 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
             if view.id() not in session.anchors:
                 sels = view.sel()
                 session.anchors[view.id()] = sels[0].begin() if sels else 0
+        if session.highlight:
+            # Covers views whose scheme has no override yet (e.g. a
+            # syntax-specific color_scheme); a no-op otherwise.
+            _sync_schemes(views)
         self._show_labels(self._find_targets(views, session))
 
     def _find_targets(self, views, session):
@@ -431,9 +560,10 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
                 phantom_set = sublime.PhantomSet(view, PHANTOM_KEY)
                 session.phantom_sets[view.id()] = phantom_set
             phantom_set.update(phantoms)
-            view.add_regions(
-                REGION_KEY, regions, session.scope, flags=sublime.DRAW_NO_OUTLINE
-            )
+            if session.highlight:
+                view.add_regions(
+                    REGION_KEY, regions, TARGET_SCOPE, flags=sublime.DRAW_NO_OUTLINE
+                )
             session.change_counts[view.id()] = view.change_count()
             session.rendered[view_id] = view
 
@@ -604,8 +734,14 @@ class MinijumpSelectCommand(sublime_plugin.WindowCommand):
 
 
 def plugin_loaded():
-    pass
+    sublime.load_settings(SETTINGS_FILE).add_on_change(
+        ON_CHANGE_KEY, _sync_schemes
+    )
+    _preferences().add_on_change(ON_CHANGE_KEY, _sync_schemes)
+    _sync_schemes()
 
 
 def plugin_unloaded():
     _cleanup()
+    sublime.load_settings(SETTINGS_FILE).clear_on_change(ON_CHANGE_KEY)
+    _preferences().clear_on_change(ON_CHANGE_KEY)

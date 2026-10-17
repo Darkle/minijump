@@ -5,40 +5,28 @@
   // May also be given as a JSON array of strings.
   "labels": "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 
-  // Scope used to color both the label phantoms and the highlighted target
-  // characters. Label colors are derived from the color scheme's styles
-  // for this scope; if the scheme doesn't style it, the scheme's accent
-  // color is used. Set to "" to disable the character highlight.
-  // Possible scopes:
-  //   Region scopes:
-  //        region.redish
-  //        region.orangish
-  //        region.yellowish
-  //        region.greenish
-  //        region.cyanish
-  //        region.bluish
-  //        region.purplish
-  //        region.pinkish
-  //   Syntax scopes:
-  //        invalid.deprecated
-  //        keyword
-  //        string
-  //        comment
-  //        constant.numeric
-  //        entity.name.function
-  //        markup.inserted
-  //        markup.deleted
-  "labels_scope": "invalid",
-
   // Toggles case sensitive search in word mode.
   "search_case_sensitivity": false,
 
   // ------------------- Label appearance ---------------------------------
 
-  // Explicit label colors; empty means "derive from labels_scope / the
-  // color scheme". Any CSS color works: named, #rgb, #rrggbb, rgb(), ...
-  "label_foreground": "",
-  "label_background": "",
+  // Colors. Any CSS color works: named, #rgb, #rrggbb, #rrggbbaa, rgb(),
+  // hsl(), ... The defaults match the "invalid" style of the default
+  // color schemes (Mariana / Breakers).
+
+  // Label colors. Empty background = the color scheme's accent color;
+  // empty foreground = a color contrasting with the background.
+  "label_foreground": "#f7f7f7",
+  "label_background": "#ec5f67",
+
+  // Highlight drawn on the target characters. Sublime can only color
+  // highlights through the color scheme, so minijump writes a small
+  // override (one rule for the private "minijump.target" scope) per
+  // color scheme in use to Packages/User/minijump/. It is only rewritten
+  // when these colors or your color scheme change.
+  // Empty background = no highlight (and the overrides are removed).
+  "target_foreground": "#f7f7f7",
+  "target_background": "#ec5f67",
 
   // Font face and size (points, like Sublime's own font_size) used for
   // labels. Empty/0 = match the view's font. Matching the view font is
