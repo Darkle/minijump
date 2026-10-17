@@ -76,11 +76,6 @@ Every command also accepts `"current_buffer_only": true` to restrict the jump to
 | `search_case_sensitivity`                 | `true`                | Case-sensitive search in word mode.                                                                                                |
 | `label_foreground` / `label_background`   | `#f7f7f7` / `#ec5f67` | Label colors (any CSS color). Empty background = scheme accent; empty foreground = contrasting color.                              |
 | `target_foreground` / `target_background` | `#f7f7f7` / `#ec5f67` | Target-character highlight colors. Empty background disables the highlight.                                                        |
-| `label_font_face` / `label_font_size`     | `""` / `0`            | Label font; empty/0 = match the view's font.                                                                                       |
-| `label_bold`                              | `true`                | Bold labels.                                                                                                                       |
-| `label_padding`                           | `1`                   | Horizontal padding (px) around each label.                                                                                         |
-| `label_border_radius`                     | `2`                   | Corner radius (px) of each label.                                                                                                  |
-| `label_offset_em`                         | `0.6`                 | Pull-back of the label over the target char, in em. Most monospace fonts are ~0.6em per character; use `0.5` for e.g. Ubuntu Mono. |
 
 All colors are set explicitly; nothing is derived from scopes.
 

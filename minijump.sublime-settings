@@ -27,23 +27,4 @@
   // Empty background = no highlight (the overrides are emptied, not deleted).
   "target_foreground": "#f7f7f7",
   "target_background": "#ec5f67",
-
-  // Font face and size (points, like Sublime's own font_size) used for
-  // labels. Empty/0 = match the view's font. Matching the view font is
-  // what makes labels sit exactly on top of the target characters.
-  "label_font_face": "",
-  "label_font_size": 0,
-
-  "label_bold": true,
-
-  // Box styling around each label.
-  "label_padding": 1,
-  "label_border_radius": 2,
-
-  // Horizontal pull-back of the label over the target character, in em
-  // (relative to the label font size). Monospace advance widths are
-  // ~0.5–0.62em; 0.6 is correct for most fonts. Raise it if labels sit
-  // too far right, lower it if they sit too far left (e.g. 0.5 for
-  // Ubuntu Mono).
-  "label_offset_em": 0.6,
 }

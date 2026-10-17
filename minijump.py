@@ -59,6 +59,9 @@ DEFAULT_SCHEMES = {
 
 DEFAULT_LABELS = "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+# How far each label is pulled left over the text before its target, in em.
+LABEL_OFFSET_EM = 0.2
+
 # Fallback monospace face when neither the view nor the preferences specify
 # one (matches Sublime Text's own per-platform defaults).
 DEFAULT_FONT_FACE = {
@@ -96,13 +99,6 @@ def _fmt_num(value):
 
 def _escape_html(text):
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _to_int(value, default):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 # ------------------------------------------------------ scheme overrides
@@ -257,13 +253,10 @@ class _Session(object):  # noqa: UP004
         "_html_cache",
         "anchors",
         "awaiting_label",
-        "bold",
         "case_sensitive",
         "change_counts",
         "command",
         "current_buffer_only",
-        "font_face",
-        "font_size",
         "head_char",
         "highlight",
         "kind",
@@ -272,10 +265,7 @@ class _Session(object):  # noqa: UP004
         "label_map",
         "labels",
         "needs_head_char",
-        "offset",
-        "padding",
         "phantom_sets",
-        "radius",
         "rendered",
         "window",
     )
@@ -297,15 +287,6 @@ class _Session(object):  # noqa: UP004
         self.case_sensitive = bool(settings.get("search_case_sensitivity", True))
 
         self.highlight = bool(_color(settings, "target_background"))
-        self.bold = bool(settings.get("label_bold", True))
-        self.padding = max(0, _to_int(settings.get("label_padding") or 0, 0))
-        self.radius = max(0, _to_int(settings.get("label_border_radius") or 0, 0))
-        try:
-            self.offset = float(settings.get("label_offset_em") or 0.6)
-        except (TypeError, ValueError):
-            self.offset = 0.6
-        self.font_face = settings.get("label_font_face") or ""
-        self.font_size = settings.get("label_font_size") or 0
         self.label_fg = _color(settings, "label_foreground")
         self.label_bg = _color(settings, "label_background")
 
@@ -336,26 +317,16 @@ class _Session(object):  # noqa: UP004
             f"color:{fg}",
         ]
         size = (
-            self.font_size
-            or view.settings().get("font_size")
+            view.settings().get("font_size")
             or _preferences().get("font_size", 10)
         )
         # Sublime's font_size is in points; use pt so labels match the
         # view's text metrics exactly (a px-sized label would misalign).
         parts.append(f"font-size:{_fmt_num(size)}pt")
-        if self.bold:
-            parts.append("font-weight:bold")
-        if self.padding:
-            parts.append("padding:0 %dpx" % self.padding)  # noqa: UP031
-        if self.radius:
-            parts.append("border-radius:%dpx" % self.radius)  # noqa: UP031
-        # Pull the label back over the target character (monospace advance
-        # widths are ~0.5–0.62em; 0.6em is right for most fonts).
-        parts.append(f"position:relative;left:-{_fmt_num(self.offset)}em")
+        parts.append(f"position:relative;left:-{LABEL_OFFSET_EM}em")
         parts.append("white-space:nowrap")
         face = (
-            self.font_face
-            or view.settings().get("font_face")
+            view.settings().get("font_face")
             or _preferences().get("font_face")
             or DEFAULT_FONT_FACE.get(sublime.platform(), "monospace")
         )
