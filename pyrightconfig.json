@@ -1,0 +1,5 @@
+{
+  // Resolve the `sublime` / `sublime_plugin` modules bundled with
+  // Sublime Text, so Pylance can type-check the plugin.
+  "extraPaths": ["/opt/sublime_text/Lib/python314"]
+}

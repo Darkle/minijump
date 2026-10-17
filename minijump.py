@@ -42,7 +42,7 @@ SETTINGS_FILE = "minijump.sublime-settings"
 PHANTOM_KEY = "minijump_labels"
 REGION_KEY = "minijump_targets"
 
-DEFAULT_LABELS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+DEFAULT_LABELS = "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # Fallback monospace face when neither the view nor the preferences specify
 # one (matches Sublime Text's own per-platform defaults).
@@ -52,8 +52,8 @@ DEFAULT_FONT_FACE = {
     "linux": "Monospace",
 }
 
-_session = None        # the active _Session, or None
-_select = False        # select mode armed for the next jump
+_session = None  # the active _Session, or None
+_select = False  # select mode armed for the next jump
 
 _prefs = None
 _regex_cache = {}
@@ -71,9 +71,9 @@ def _fmt_num(value):
     if isinstance(value, bool):
         return str(int(value))
     if isinstance(value, (int, float)):
-        return "%g" % value
+        return f"{value:g}"
     try:
-        return "%g" % float(value)
+        return f"{float(value):g}"
     except (TypeError, ValueError):
         return str(value)
 
@@ -112,16 +112,33 @@ class _Session(object):
     """All state for one active jump. Only one session exists at a time."""
 
     __slots__ = (
-        "window", "command", "kind", "needs_head_char", "current_buffer_only",
-        "labels", "case_sensitive",
-        "scope", "bold", "padding", "radius", "offset",
-        "font_face", "font_size", "label_fg", "label_bg",
-        "head_char", "label_map", "awaiting_label",
-        "phantom_sets", "rendered", "change_counts", "anchors", "_html_cache",
+        "_html_cache",
+        "anchors",
+        "awaiting_label",
+        "bold",
+        "case_sensitive",
+        "change_counts",
+        "command",
+        "current_buffer_only",
+        "font_face",
+        "font_size",
+        "head_char",
+        "kind",
+        "label_bg",
+        "label_fg",
+        "label_map",
+        "labels",
+        "needs_head_char",
+        "offset",
+        "padding",
+        "phantom_sets",
+        "radius",
+        "rendered",
+        "scope",
+        "window",
     )
 
-    def __init__(self, window, command, kind, needs_head_char,
-                 current_buffer_only):
+    def __init__(self, window, command, kind, needs_head_char, current_buffer_only):
         settings = sublime.load_settings(SETTINGS_FILE)
 
         self.window = window
@@ -152,14 +169,14 @@ class _Session(object):
 
         self.head_char = ""
         self.awaiting_label = False
-        self.label_map = {}        # label -> (view, point)
-        self.phantom_sets = {}     # view id -> PhantomSet
+        self.label_map = {}  # label -> (view, point)
+        self.phantom_sets = {}  # view id -> PhantomSet
         # View objects are unhashable in Sublime Text 4. Keep stable ids as
         # keys and retain the view object as the value.
-        self.rendered = {}         # view id -> view currently carrying overlays
-        self.change_counts = {}    # view id -> change_count at render time
-        self.anchors = {}          # view id -> selection anchor at run time
-        self._html_cache = {}      # view id -> cached <span style=...>
+        self.rendered = {}  # view id -> view currently carrying overlays
+        self.change_counts = {}  # view id -> change_count at render time
+        self.anchors = {}  # view id -> selection anchor at run time
+        self._html_cache = {}  # view id -> cached <span style=...>
 
     # ------------------------------------------------------------ label html
 
@@ -168,36 +185,40 @@ class _Session(object):
         if style is None:
             style = self._label_style(view)
             self._html_cache[view.id()] = style
-        return '<span style="%s">%s</span>' % (style, _escape_html(label))
+        return f'<span style="{style}">{_escape_html(label)}</span>'
 
     def _label_style(self, view):
         bg, fg = self._label_colors(view)
         parts = [
-            "background-color:%s" % bg,
-            "color:%s" % fg,
+            f"background-color:{bg}",
+            f"color:{fg}",
         ]
-        face = (self.font_face
-                or view.settings().get("font_face")
-                or _preferences().get("font_face")
-                or DEFAULT_FONT_FACE.get(sublime.platform(), "monospace"))
+        face = (
+            self.font_face
+            or view.settings().get("font_face")
+            or _preferences().get("font_face")
+            or DEFAULT_FONT_FACE.get(sublime.platform(), "monospace")
+        )
         face = str(face).replace("'", "")
         if face:
-            parts.append("font-family:'%s'" % face)
-        size = (self.font_size
-                or view.settings().get("font_size")
-                or _preferences().get("font_size", 10))
+            parts.append(f"font-family:'{face}'")
+        size = (
+            self.font_size
+            or view.settings().get("font_size")
+            or _preferences().get("font_size", 10)
+        )
         # Sublime's font_size is in points; use pt so labels match the
         # view's text metrics exactly (a px-sized label would misalign).
-        parts.append("font-size:%spt" % _fmt_num(size))
+        parts.append(f"font-size:{_fmt_num(size)}pt")
         if self.bold:
             parts.append("font-weight:bold")
         if self.padding:
-            parts.append("padding:0 %dpx" % self.padding)
+            parts.append("padding:0 %dpx" % self.padding)  # noqa: UP031
         if self.radius:
-            parts.append("border-radius:%dpx" % self.radius)
+            parts.append("border-radius:%dpx" % self.radius)  # noqa: UP031
         # Pull the label back over the target character (monospace advance
         # widths are ~0.5–0.62em; 0.6em is right for most fonts).
-        parts.append("position:relative;left:-%sem" % _fmt_num(self.offset))
+        parts.append(f"position:relative;left:-{_fmt_num(self.offset)}em")
         parts.append("white-space:nowrap")
         return ";".join(parts)
 
@@ -250,14 +271,15 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
         if view is None:
             return
 
-        session = _Session(self.window, self, self.kind,
-                           self.needs_head_char, current_buffer_only)
+        session = _Session(
+            self.window, self, self.kind, self.needs_head_char, current_buffer_only
+        )
         _session = session
         self._session = session
 
         self.window.show_input_panel(
-            self.caption, "",
-            self._on_done, self._on_change, self._on_cancel)
+            self.caption, "", self._on_done, self._on_change, self._on_cancel
+        )
 
         if not self.needs_head_char:
             # Opening the panel shrinks the viewport; let the layout settle
@@ -312,8 +334,8 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
         if session.needs_head_char and not session.awaiting_label and len(text) == 1:
             session.awaiting_label = True
             self.window.show_input_panel(
-                "Label", "", self._on_done,
-                self._on_change, self._on_cancel)
+                "Label", "", self._on_done, self._on_change, self._on_cancel
+            )
             self._status("minijump: type a label")
             return
 
@@ -361,8 +383,12 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
                 points = _line_scan(view, region, remaining)
             else:
                 points = _substr_scan(
-                    view, region, r"\b" + re.escape(session.head_char),
-                    remaining, session)
+                    view,
+                    region,
+                    r"\b" + re.escape(session.head_char),
+                    remaining,
+                    session,
+                )
             targets.extend((view, point) for point in points)
         return targets
 
@@ -370,7 +396,7 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
         session = self._session
 
         session.label_map = {}
-        per_view = {}              # view id -> [(point, label)]
+        per_view = {}  # view id -> [(point, label)]
         views_by_id = {}
         for label, (view, point) in zip(session.labels, targets):
             session.label_map[label] = (view, point)
@@ -391,9 +417,11 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
             if not view.is_valid():
                 continue
             phantoms = [
-                sublime.Phantom(sublime.Region(point),
-                                session.label_html(view, label),
-                                sublime.LAYOUT_INLINE)
+                sublime.Phantom(
+                    sublime.Region(point),
+                    session.label_html(view, label),
+                    sublime.LAYOUT_INLINE,
+                )
                 for point, label in pairs
             ]
             regions = [sublime.Region(point, point + 1) for point, _ in pairs]
@@ -403,19 +431,21 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
                 phantom_set = sublime.PhantomSet(view, PHANTOM_KEY)
                 session.phantom_sets[view.id()] = phantom_set
             phantom_set.update(phantoms)
-            view.add_regions(REGION_KEY, regions, session.scope,
-                             flags=sublime.DRAW_NO_OUTLINE)
+            view.add_regions(
+                REGION_KEY, regions, session.scope, flags=sublime.DRAW_NO_OUTLINE
+            )
             session.change_counts[view.id()] = view.change_count()
             session.rendered[view_id] = view
 
         if not targets:
-            hint = " for %r" % session.head_char if session.head_char else ""
-            self._status("minijump: no matches%s" % hint)
+            hint = f" for {session.head_char!r}" if session.head_char else ""
+            self._status(f"minijump: no matches{hint}")
         else:
             views = len(per_view)
             self._status(
-                "minijump: %d targets in %d view%s — type a label"
-                % (len(targets), views, "" if views == 1 else "s"))
+                "minijump: %d targets in %d view%s — type a label"  # noqa: UP031
+                % (len(targets), views, "" if views == 1 else "s")
+            )
 
     def _views(self, session):
         """Views to label: all visible panes, or just the active view for
@@ -448,8 +478,10 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
             # can select a displayed `B`.
             target = session.label_map.get(label.swapcase())
         if target is None:
-            self._status("minijump: no visible label %r — type a label "
-                         "or press Esc to cancel" % label)
+            self._status(
+                f"minijump: no visible label {label!r} — type a label "
+                "or press Esc to cancel"
+            )
             return False
 
         view, point = target
@@ -483,6 +515,7 @@ class MinijumpCommand(sublime_plugin.WindowCommand):
 
 
 # ------------------------------------------------------------- find helpers
+
 
 def _substr_scan(view, region, pattern, limit, session):
     """Find up to `limit` matches of `pattern` in `region`.
@@ -535,6 +568,7 @@ def _line_scan(view, region, limit):
 
 # ------------------------------------------------------------- jump commands
 
+
 class MinijumpWordCommand(MinijumpCommand):
     """Jump to the beginning of a word starting with the given character."""
 
@@ -552,6 +586,7 @@ class MinijumpLineCommand(MinijumpCommand):
 
 # ------------------------------------------------------------- select mode
 
+
 class MinijumpSelectCommand(sublime_plugin.WindowCommand):
     """Toggle select mode: the next jump selects from the cursor to the
     target."""
@@ -559,14 +594,14 @@ class MinijumpSelectCommand(sublime_plugin.WindowCommand):
     def run(self, **kwargs):
         global _select
         _select = not _select
-        self.window.status_message("minijump: select %s"
-                                   % ("ON" if _select else "OFF"))
+        self.window.status_message("minijump: select %s" % ("ON" if _select else "OFF"))
         session = _session
         if session is not None and session.window.id() == self.window.id():
             session.command.refresh()
 
 
 # ------------------------------------------------------------------ lifecycle
+
 
 def plugin_loaded():
     pass
