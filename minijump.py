@@ -59,9 +59,6 @@ DEFAULT_SCHEMES = {
 
 DEFAULT_LABELS = "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-# How far each label is pulled left over the text before its target, in em.
-LABEL_OFFSET_EM = 0.2
-
 # Fallback monospace face when neither the view nor the preferences specify
 # one (matches Sublime Text's own per-platform defaults).
 DEFAULT_FONT_FACE = {
@@ -323,7 +320,6 @@ class _Session(object):  # noqa: UP004
         # Sublime's font_size is in points; use pt so labels match the
         # view's text metrics exactly (a px-sized label would misalign).
         parts.append(f"font-size:{_fmt_num(size)}pt")
-        parts.append(f"position:relative;left:-{LABEL_OFFSET_EM}em")
         parts.append("white-space:nowrap")
         face = (
             view.settings().get("font_face")
