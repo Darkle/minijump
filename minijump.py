@@ -335,15 +335,6 @@ class _Session(object):  # noqa: UP004
             f"background-color:{bg}",
             f"color:{fg}",
         ]
-        face = (
-            self.font_face
-            or view.settings().get("font_face")
-            or _preferences().get("font_face")
-            or DEFAULT_FONT_FACE.get(sublime.platform(), "monospace")
-        )
-        face = str(face).replace("'", "")
-        if face:
-            parts.append(f"font-family:'{face}'")
         size = (
             self.font_size
             or view.settings().get("font_size")
@@ -362,6 +353,18 @@ class _Session(object):  # noqa: UP004
         # widths are ~0.5–0.62em; 0.6em is right for most fonts).
         parts.append(f"position:relative;left:-{_fmt_num(self.offset)}em")
         parts.append("white-space:nowrap")
+        face = (
+            self.font_face
+            or view.settings().get("font_face")
+            or _preferences().get("font_face")
+            or DEFAULT_FONT_FACE.get(sublime.platform(), "monospace")
+        )
+        # minihtml drops every declaration after a quoted font-family
+        # (`font-family:'Maple Mono';font-size:40pt` ignores the size), so
+        # the name is written unquoted (spaces are fine) and placed last.
+        face = re.sub(r"[\"';{}<>]", "", str(face)).strip()
+        if face:
+            parts.append(f"font-family:{face}")
         return ";".join(parts)
 
     def _label_colors(self):
