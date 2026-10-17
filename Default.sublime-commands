@@ -1,0 +1,5 @@
+[
+    { "caption": "minijump: Word mode", "command": "minijump_word" },
+    { "caption": "minijump: Line mode", "command": "minijump_line" },
+    { "caption": "minijump: Toggle select mode", "command": "minijump_select" }
+]

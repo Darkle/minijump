@@ -1,0 +1,7 @@
+[
+    // Add "current_buffer_only": true to any binding to restrict the jump
+    // to the active buffer instead of all visible panes.
+    { "keys": ["shift+enter"], "command": "minijump_word" },
+    { "keys": ["super+shift+."], "command": "minijump_line" },
+    { "keys": ["ctrl+;"], "command": "minijump_select" }
+]

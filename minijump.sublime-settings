@@ -1,0 +1,61 @@
+{
+  // Characters to use as labels, in order. At most len(labels) targets
+  // are labeled per jump; targets beyond that are not shown.
+  // Characters must be unique (duplicates are dropped).
+  // May also be given as a JSON array of strings.
+  "labels": "sadewcvgtbfhijklmnopqruxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+
+  // Scope used to color both the label phantoms and the highlighted target
+  // characters. Label colors are derived from the color scheme's styles
+  // for this scope; if the scheme doesn't style it, the scheme's accent
+  // color is used. Set to "" to disable the character highlight.
+  // Possible scopes:
+  //   Region scopes:
+  //        region.redish
+  //        region.orangish
+  //        region.yellowish
+  //        region.greenish
+  //        region.cyanish
+  //        region.bluish
+  //        region.purplish
+  //        region.pinkish
+  //   Syntax scopes:
+  //        invalid.deprecated
+  //        keyword
+  //        string
+  //        comment
+  //        constant.numeric
+  //        entity.name.function
+  //        markup.inserted
+  //        markup.deleted
+  "labels_scope": "invalid",
+
+  // Toggles case sensitive search in word mode.
+  "search_case_sensitivity": false,
+
+  // ------------------- Label appearance ---------------------------------
+
+  // Explicit label colors; empty means "derive from labels_scope / the
+  // color scheme". Any CSS color works: named, #rgb, #rrggbb, rgb(), ...
+  "label_foreground": "",
+  "label_background": "",
+
+  // Font face and size (points, like Sublime's own font_size) used for
+  // labels. Empty/0 = match the view's font. Matching the view font is
+  // what makes labels sit exactly on top of the target characters.
+  "label_font_face": "",
+  "label_font_size": 0,
+
+  "label_bold": true,
+
+  // Box styling around each label.
+  "label_padding": 1,
+  "label_border_radius": 2,
+
+  // Horizontal pull-back of the label over the target character, in em
+  // (relative to the label font size). Monospace advance widths are
+  // ~0.5–0.62em; 0.6 is correct for most fonts. Raise it if labels sit
+  // too far right, lower it if they sit too far left (e.g. 0.5 for
+  // Ubuntu Mono).
+  "label_offset_em": 0.6,
+}
