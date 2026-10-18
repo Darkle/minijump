@@ -46,6 +46,8 @@ Jumps to the beginning of a word starting with the typed character (alphanumeric
 
 Default keybinding: `Shift+Enter`
 
+So lets say you want to move the cursor to a word starting with "c". You would press `Shift+Enter`, then `c`, minijump then adds a letter label next to each word that starts with "c" in the viewport. You then type the letter label to move to that position.
+
 ![Word mode](videos/animated/avif/word_mode.avif)
 
 ### Line mode
