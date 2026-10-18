@@ -40,19 +40,27 @@ This package is heavily inspired by [AceJump](https://github.com/ice9js/ace-jump
 
 ## Usage
 
-| Mode | Keys (Win/Linux) | Keys (macOS)  | Flow                                   |
-| ---- | ---------------- | ------------- | -------------------------------------- |
-| Word | `Shift+Enter`    | `Shift+Enter` | type head char → type label            |
-| Line | `Ctrl+Shift+.`   | `Cmd+Shift+.` | labels appear immediately → type label |
+### Word mode
 
-- **Word mode** jumps to the beginning of a word starting with the typed character (alphanumerics and `_`).
-- **Line mode** labels every non-empty visible line; you jump to the first non-whitespace character of the chosen line.
+Jumps to the beginning of a word starting with the typed character (alphanumerics and `_`).
 
-No `Enter` is needed after a label. Each jump labels at most one target per label character (52 by default); targets beyond that are not shown.
+Default keybinding: `Shift+Enter`
+
+<video src="videos/word_mode.mp4" controls></video>
+
+### Line mode
+
+Labels every non-empty visible line; you jump to the first non-whitespace character of the chosen line.
+
+Default keybinding: `Ctrl+Shift+.`
+
+<video src="videos/line_mode.mp4" controls></video>
 
 ### Select mode
 
 Press `Alt+;` (macOS: `Ctrl+;`) before (or during) a jump to arm select mode: the next jump selects from the cursor to the target (current file only). Toggling it while labels are visible re-renders them immediately.
+
+<video src="videos/select_mode.mp4" controls></video>
 
 ### Options
 
