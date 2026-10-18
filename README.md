@@ -46,7 +46,7 @@ Jumps to the beginning of a word starting with the typed character (alphanumeric
 
 Default keybinding: `Shift+Enter`
 
-<video src="videos/word_mode.mp4" controls></video>
+![Word mode](videos/animated/word_mode.avif)
 
 ### Line mode
 
@@ -54,13 +54,13 @@ Labels every non-empty visible line; you jump to the first non-whitespace charac
 
 Default keybinding: `Ctrl+Shift+.`
 
-<video src="videos/line_mode.mp4" controls></video>
+![Line mode](videos/animated/line_mode.avif)
 
 ### Select mode
 
 Press `Alt+;` (macOS: `Ctrl+;`) before (or during) a jump to arm select mode: the next jump selects from the cursor to the target (current file only). Toggling it while labels are visible re-renders them immediately.
 
-<video src="videos/select_mode.mp4" controls></video>
+![Select mode](videos/animated/select_mode.avif)
 
 ### Options
 
