@@ -34,9 +34,13 @@ This package is heavily inspired by [AceJump](https://github.com/ice9js/ace-jump
 
 ## Installation
 
-1. `Preferences → Browse Packages…`
-2. Copy the `minijump` folder into it.
-3. Restart Sublime Text (or run `Preferences → Package Control → Reload Packages`).
+Clone repository into Packages directory (can be found using `Preferences: Browse Packages` command in Sublime Text)
+
+``` sh
+git clone https://github.com/Darkle/minijump.git
+```
+
+Then restart Sublime Text (or run `Preferences → Package Control → Reload Packages`).
 
 ## Usage
 
